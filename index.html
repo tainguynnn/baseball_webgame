@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bóng Chày - Không Khán Giả v13</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* Base styles */
+        :root {
+            /* Define base font sizes for easier scaling */
+            --font-size-base: 16px;
+            --font-size-small: 12px;
+            --font-size-xsmall: 10px;
+            --font-size-large: 18px;
+            --font-size-xlarge: 28px;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #212121;
+            font-family: 'Press Start 2P', Arial, sans-serif;
+            color: white;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            overflow-y: auto; /* Allow vertical scroll if needed */
+            margin: 0;
+            padding: 10px; /* Add some padding for small screens */
+            box-sizing: border-box;
+            flex-direction: column;
+            font-size: var(--font-size-base); /* Set base font size */
+        }
+
+        /* Ensure consistent font application */
+        #scoreboard, #instructions, #message, #message-box, #arrow-guide, #message-box button, #start-screen label, #start-screen input, #start-screen button, #banner {
+            font-family: 'Press Start 2P', Arial, sans-serif;
+        }
+
+        #start-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px; /* Adjusted padding */
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            border: 2px solid white;
+            text-align: center;
+            width: 90%; /* Responsive width */
+            max-width: 500px; /* Max width */
+            box-sizing: border-box;
+        }
+
+        #start-screen label {
+            margin-bottom: 15px;
+            font-size: var(--font-size-base);
+        }
+
+        #start-screen input[type="text"] {
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            font-size: var(--font-size-base);
+            background-color: #eee;
+            color: #333;
+            width: 90%; /* Responsive width */
+            max-width: 300px; /* Max width */
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        #start-screen button {
+            padding: 12px 25px; /* Adjusted padding */
+            font-size: var(--font-size-large);
+            cursor: pointer;
+            background: linear-gradient(145deg, #ff8a65, #ffab91);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 5px #e65100;
+            transition: all 0.1s ease;
+        }
+
+        #start-screen button:active {
+            box-shadow: 0 2px #e65100;
+            transform: translateY(3px);
+        }
+
+        #game-container-main {
+            display: none; /* Initially hidden */
+            flex-direction: column;
+            align-items: center;
+            width: 100%; /* Take full width */
+            box-sizing: border-box;
+        }
+
+        #game-world {
+            /* Use vw/vh and max values for responsiveness */
+            width: 95vw;
+            max-width: 800px; /* Limit max width */
+            height: 65vh;
+            max-height: 550px; /* Limit max height */
+            background: linear-gradient(to bottom, #87CEEB 55%, #006400 55%, #558B2F 100%);
+            border: 5px solid #A0A0A0;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            position: relative;
+            overflow: hidden;
+            perspective: 700px; /* Keep perspective */
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            box-sizing: border-box;
+        }
+
+        #field {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 300%; /* Kept for perspective effect */
+            height: 45%;
+            background-color: #006400;
+            border-top: 5px solid #A1887F;
+            transform-origin: bottom center;
+            transform: translateX(-50%) rotateX(55deg);
+        }
+
+        /* Grandstand - Simple gradient background */
+        #grandstand {
+            position: absolute;
+            bottom: 44.5%; /* Adjusted position relative to field */
+            left: 50%;
+            transform: translateX(-50%); /* Center it */
+            width: 100%; /* Full width of the perspective container */
+            height: 30%;
+            /* Example gradient - replace or enhance as needed */
+            background: linear-gradient(to bottom, #666 0%, #888 30%, #aaa 100%);
+            border-top: 3px solid #555;
+            border-bottom: 3px solid #555;
+            z-index: 1; /* Behind pitcher/ball */
+            /* Removed the img tag from HTML */
+        }
+
+        #banner {
+            position: absolute;
+            top: 20%;
+            left: 0;
+            width: 100%;
+            padding: 5px 0;
+            background-color: rgba(0, 0, 0, 0.65);
+            color: yellow;
+            text-align: center;
+            font-size: clamp(10px, 2.5vw, 16px); /* Fluid font size */
+            z-index: 4;
+            transform: translateZ(-140px);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            box-sizing: border-box;
+        }
+
+        #pitcher {
+            position: absolute;
+            /* Responsive size using vw, with max size */
+            width: clamp(40px, 10vw, 80px);
+            height: auto; /* Maintain aspect ratio */
+            max-height: 80px;
+            border-radius: 3px;
+            top: 50%;
+            left: 50%;
+            transform: translateX(-50%) translateZ(-250px);
+            z-index: 3;
+        }
+
+        #strike-zone-container {
+            position: absolute;
+            /* Responsive size */
+            width: clamp(60px, 15vw, 100px);
+            height: clamp(80px, 20vw, 120px);
+            top: 55%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        #ghost-ball {
+            position: absolute;
+            /* Responsive size */
+            width: clamp(20px, 5vw, 35px);
+            height: clamp(20px, 5vw, 35px);
+            background-color: rgba(255, 255, 0, 0.3);
+            border: 2px solid yellow;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 6;
+            opacity: 0;
+            transition: top 0.1s ease-out, left 0.1s ease-out, opacity 0.2s ease-in-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #inner-ghost-ball {
+             /* Responsive size relative to parent */
+            width: 40%;
+            height: 40%;
+            background-color: rgba(255, 0, 0, 0.7);
+            border: 1px solid red;
+            border-radius: 50%;
+        }
+
+        #ball {
+            position: absolute;
+            /* Start small, scale up */
+            width: 5px;
+            height: 5px;
+            background-color: white;
+            border-radius: 50%;
+            top: 61%;
+            left: 50%;
+            transform-origin: center center;
+            z-index: 10;
+            opacity: 0;
+        }
+
+        #bat {
+            position: absolute;
+            /* Responsive size */
+            width: clamp(8px, 2vw, 15px);
+            height: clamp(80px, 18vh, 150px);
+            background-color: #8D6E63;
+            border-radius: clamp(2px, 0.5vw, 5px);
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(100%) rotate(25deg);
+            transform-origin: bottom center;
+            z-index: 20;
+            transition: transform 0.1s ease-out;
+        }
+
+        #scoreboard {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 5px 10px; /* Adjusted padding */
+            border-radius: 8px;
+            font-size: clamp(10px, 2vw, 14px); /* Fluid font size */
+            line-height: 1.6; /* Adjusted line height */
+            border: 2px solid white;
+            z-index: 30;
+        }
+
+        #score-value {
+            color: yellow;
+            font-weight: bold;
+        }
+
+        #instructions {
+            margin-top: 15px;
+            font-size: var(--font-size-small);
+            text-align: center;
+            line-height: 1.5;
+            padding: 0 10px; /* Add horizontal padding */
+            width: 90%; /* Ensure it doesn't overflow */
+            max-width: 600px;
+            box-sizing: border-box;
+        }
+
+        #arrow-guide {
+            display: grid;
+            /* Adjust grid columns for responsiveness */
+            grid-template-columns: repeat(3, clamp(35px, 10vw, 50px));
+            grid-template-rows: repeat(2, clamp(25px, 8vw, 30px));
+            gap: 5px;
+            justify-content: center;
+            margin-top: 10px;
+            font-size: var(--font-size-xsmall);
+            line-height: 1.2;
+            text-align: center;
+        }
+
+        .arrow-key {
+            border: 1px solid white;
+            border-radius: 4px;
+            padding: 2px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            overflow: hidden; /* Prevent content spillover */
+            white-space: nowrap; /* Keep text on one line */
+        }
+
+        #arrow-up { grid-column: 2; grid-row: 1; }
+        #arrow-left { grid-column: 1; grid-row: 2; }
+        #arrow-down { grid-column: 2; grid-row: 2; }
+        #arrow-right { grid-column: 3; grid-row: 2; }
+
+        .arrow-symbol {
+            font-size: clamp(10px, 3vw, 14px); /* Fluid font size */
+        }
+        .zone-name {
+            color: #ccc;
+            font-size: clamp(6px, 1.5vw, 8px); /* Smaller font for zone name */
+            margin-top: 2px;
+        }
+
+        #message {
+            position: absolute;
+            top: 45%; /* Slightly adjusted */
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(18px, 5vw, 28px); /* Fluid font size */
+            color: yellow;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9); /* Slightly reduced shadow */
+            display: none;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 15px 25px; /* Adjusted padding */
+            border-radius: 10px;
+            z-index: 100;
+            text-align: center;
+            width: 80%; /* Responsive width */
+            max-width: 400px; /* Max width */
+            box-sizing: border-box;
+        }
+
+        #message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 20px 30px; /* Adjusted padding */
+            border-radius: 15px;
+            border: 3px solid white;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+            font-size: var(--font-size-base);
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
+            width: 85%; /* Responsive width */
+            max-width: 450px; /* Max width */
+            box-sizing: border-box;
+        }
+
+        #message-box p {
+            margin-bottom: 20px;
+        }
+
+        #message-box button {
+            font-family: 'Press Start 2P', Arial, sans-serif;
+            padding: 10px 20px; /* Adjusted padding */
+            font-size: clamp(12px, 3vw, 15px); /* Fluid font size */
+            cursor: pointer;
+            background: linear-gradient(145deg, #4CAF50, #8BC34A);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 5px #388E3C;
+            transition: all 0.1s ease;
+        }
+
+        #message-box button:active {
+            box-shadow: 0 2px #388E3C;
+            transform: translateY(3px);
+        }
+
+        /* Media Queries for smaller screens */
+        @media (max-width: 600px) {
+            :root {
+                /* Slightly smaller base fonts on small screens */
+                --font-size-base: 14px;
+                --font-size-small: 11px;
+                --font-size-xsmall: 9px;
+                --font-size-large: 16px;
+                --font-size-xlarge: 24px;
+            }
+
+            #scoreboard {
+                line-height: 1.5;
+            }
+
+            #instructions {
+                 line-height: 1.4;
+            }
+
+            #message {
+                padding: 10px 20px;
+            }
+
+             #message-box {
+                padding: 15px 20px;
+            }
+        }
+
+         @media (max-width: 400px) {
+             :root {
+                /* Even smaller base fonts on very small screens */
+                --font-size-base: 12px;
+                --font-size-small: 10px;
+                --font-size-xsmall: 8px;
+                --font-size-large: 14px;
+                --font-size-xlarge: 20px;
+            }
+            #start-screen { padding: 15px; }
+            #start-screen input[type="text"] { padding: 8px; }
+            #start-screen button { padding: 10px 20px; }
+            #scoreboard { padding: 4px 8px; }
+            #arrow-guide { grid-template-columns: repeat(3, clamp(30px, 9vw, 40px)); gap: 3px; }
+            .arrow-key { padding: 1px; }
+            #message-box button { padding: 8px 15px; }
+         }
+
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <label for="teamNameInput">Nhập tên đội của bạn:</label>
+        <input type="text" id="teamNameInput" maxlength="20" placeholder="Vd: SIÊU SAO">
+        <button id="startGameButton">Bắt đầu!</button>
+    </div>
+
+    <div id="game-container-main">
+        <div id="game-world">
+            <div id="field"></div>
+            <img src="khandai.png" id="grandstand" alt="">
+            <!-- <div id="grandstand">
+                <img src="khandai.png" style="bottom: 50vh; width: 100%;" alt="">
+            </div> -->
+            <div id="banner">LET GO TEAM!</div>
+            
+            <img id="pitcher" src="pitcher.webp" alt="">
+            <div id="strike-zone-container"><div id="ghost-ball"><div id="inner-ghost-ball"></div></div></div>
+            <div id="ball"></div> <div id="bat"></div>
+            <div id="scoreboard">
+                <div>Điểm: <span id="score-value">0</span></div>
+                <div>Strikes: <span id="strikes">0</span></div>
+                <div>Batters Out: <span id="batters-out">0</span></div>
+            </div>
+            <div id="message"></div>
+        </div>
+        <div id="instructions">
+            Dùng Mũi Tên để nhắm vào vùng bóng tới.<br>
+            Nhấn Space khi bóng thật khớp bóng ảo (khớp tâm đỏ = HR).
+        </div>
+        <div id="arrow-guide">
+            <div id="arrow-up" class="arrow-key"><span class="arrow-symbol">↑</span><span class="zone-name">TrênTrái</span></div>
+            <div id="arrow-left" class="arrow-key"><span class="arrow-symbol">←</span><span class="zone-name">DướiTrái</span></div>
+            <div id="arrow-down" class="arrow-key"><span class="arrow-symbol">↓</span><span class="zone-name">DướiPhải</span></div>
+            <div id="arrow-right" class="arrow-key"><span class="arrow-symbol">→</span><span class="zone-name">TrênPhải</span></div>
+        </div>
+    </div>
+
+    <div id="message-box">
+        <p id="message-box-text"></p>
+        <button id="message-box-ok">Chơi Lại?</button>
+    </div>
+
+    <script>
+        // DOM Elements (bỏ canvas)
+        const ball = document.getElementById('ball'); const bat = document.getElementById('bat');
+        const ghostBall = document.getElementById('ghost-ball'); const innerGhostBall = document.getElementById('inner-ghost-ball');
+        const strikesSpan = document.getElementById('strikes'); const battersOutSpan = document.getElementById('batters-out');
+        const scoreValueSpan = document.getElementById('score-value'); const messageDiv = document.getElementById('message');
+        const messageBox = document.getElementById('message-box'); const messageBoxText = document.getElementById('message-box-text');
+        const messageBoxOk = document.getElementById('message-box-ok'); const instructionsDiv = document.getElementById('instructions');
+        const grandstandDiv = document.getElementById('grandstand'); // Vẫn giữ để tham chiếu style nếu cần
+        const banner = document.getElementById('banner');
+        const startScreen = document.getElementById('start-screen');
+        const teamNameInput = document.getElementById('teamNameInput');
+        const startGameButton = document.getElementById('startGameButton');
+        const gameContainerMain = document.getElementById('game-container-main');
+
+        // Game State (bỏ biến canvas)
+        let teamName = "ĐỘI NHÀ"; let score = 0; let strikes = 0; let batterOuts = 0;
+        let pitchTargetZone = null; let batterAimZone = null; let ballInPlay = false;
+        let canSwing = false; let hasSwung = false; let autoPitchTimeout = null;
+        let outcomeTimeout = null; let ghostBallTimeout = null; let pitchEndTimeout = null;
+        let gameRunning = false;
+
+        const PITCH_SPEED = 0.7; const GHOST_BALL_APPEAR_TIME = PITCH_SPEED * 0.65;
+        const MAX_BATTER_OUTS = 3; const ZONES = ['up-left', 'up-right', 'down-left', 'down-right'];
+        const GHOST_BALL_POSITIONS = { 'up-left': { top: '20%', left: '20%' }, 'up-right': { top: '20%', left: '80%' }, 'down-left': { top: '80%', left: '20%' }, 'down-right': { top: '80%', left: '80%' }, 'center': { top: '50%', left: '50%' } };
+        const KEY_TO_ZONE_MAP = { 'ArrowUp': 'up-left', 'ArrowDown': 'down-right', 'ArrowLeft': 'down-left', 'ArrowRight': 'up-right' };
+        const SCORE_HOME_RUN = 300; const SCORE_HIT = 100; const SCORE_STRIKE = -50;
+
+        // --- Utility Functions ---
+        function showMessageBox(text, showRestartButton = true) { /* ... */
+            messageBoxText.textContent = text; messageBoxOk.style.display = showRestartButton ? 'inline-block' : 'none';
+            messageBoxOk.textContent = batterOuts >= MAX_BATTER_OUTS ? "Chơi Lại?" : "OK"; messageBox.style.display = 'block';
+            canSwing = false; ballInPlay = false; gameRunning = false;
+            clearTimeout(autoPitchTimeout); clearTimeout(pitchEndTimeout);
+            // Không cần dừng interval khán giả nữa
+        }
+        messageBoxOk.addEventListener('click', () => { /* ... */
+             messageBox.style.display = 'none';
+            if (batterOuts >= MAX_BATTER_OUTS) {
+                startScreen.style.display = 'flex'; gameContainerMain.style.display = 'none';
+                score = 0; strikes = 0; batterOuts = 0; updateScoreboard();
+            } else { resetBatterState(); }
+        });
+        function showOutcomeMessage(text) { /* ... */
+             messageDiv.textContent = text; messageDiv.style.display = 'block'; clearTimeout(outcomeTimeout);
+            outcomeTimeout = setTimeout(() => { messageDiv.style.display = 'none'; }, 1500);
+        }
+        function updateScoreboard() { /* ... */
+            strikesSpan.textContent = strikes; battersOutSpan.textContent = batterOuts; scoreValueSpan.textContent = score;
+        }
+        function checkOverlap(realBallElem, outerGhostElem, innerGhostElem) { /* ... */
+             if (!realBallElem || !outerGhostElem || !innerGhostElem || (!ballInPlay && !hasSwung)) return { overlapOuter: false, overlapInner: false, distanceOuter: Infinity, distanceInner: Infinity };
+            const rectReal = realBallElem.getBoundingClientRect(); const rectOuter = outerGhostElem.getBoundingClientRect(); const rectInner = innerGhostElem.getBoundingClientRect();
+            if (rectReal.width === 0 || rectOuter.width === 0 || rectInner.width === 0) return { overlapOuter: false, overlapInner: false, distanceOuter: Infinity, distanceInner: Infinity };
+            const overlapOuter = !(rectReal.right < rectOuter.left || rectReal.left > rectOuter.right || rectReal.bottom < rectOuter.top || rectReal.top > rectOuter.bottom);
+            const overlapInner = !(rectReal.right < rectInner.left || rectReal.left > rectInner.right || rectReal.bottom < rectInner.top || rectReal.top > rectInner.bottom);
+            const centerRealX = rectReal.left + rectReal.width / 2; const centerRealY = rectReal.top + rectReal.height / 2;
+            const centerInnerX = rectInner.left + rectInner.width / 2; const centerInnerY = rectInner.top + rectInner.height / 2;
+            const distanceInner = Math.sqrt(Math.pow(centerRealX - centerInnerX, 2) + Math.pow(centerRealY - centerInnerY, 2));
+            const centerOuterX = rectOuter.left + rectOuter.width / 2; const centerOuterY = rectOuter.top + rectOuter.height / 2;
+            const distanceOuter = Math.sqrt(Math.pow(centerRealX - centerOuterX, 2) + Math.pow(centerRealY - centerOuterY, 2));
+            return { overlapOuter, overlapInner, distanceOuter, distanceInner };
+        }
+
+        // --- Core Game Logic ---
+        function moveGhostBall(zoneName) { /* ... */
+             if (!zoneName || !GHOST_BALL_POSITIONS[zoneName]) { zoneName = 'center'; }
+             batterAimZone = zoneName; const pos = GHOST_BALL_POSITIONS[zoneName];
+             ghostBall.style.top = pos.top; ghostBall.style.left = pos.left;
+             if (ballInPlay && !hasSwung) { ghostBall.style.opacity = '1'; }
+        }
+        function resetBatterState() { /* ... */
+            if (!gameRunning && batterOuts < MAX_BATTER_OUTS) return; // Chỉ reset nếu game đang chạy hoặc vừa kết thúc
+            ballInPlay = false; canSwing = false; hasSwung = false; pitchTargetZone = null; batterAimZone = null;
+            clearTimeout(autoPitchTimeout); clearTimeout(outcomeTimeout); clearTimeout(ghostBallTimeout); clearTimeout(pitchEndTimeout);
+            ball.style.transition = 'none'; ball.style.opacity = '0';
+            ball.style.transform = 'translateX(-50%) translateY(0) translateZ(-300px) scale(0.1)';
+            ball.style.left = '50%'; ball.style.top = '61%';
+            bat.style.transform = 'translateX(100%) rotate(25deg)'; bat.style.zIndex = 20;
+            ghostBall.style.opacity = '0'; moveGhostBall('center');
+            instructionsDiv.innerHTML = "Dùng Mũi Tên để nhắm vào vùng bóng tới.<br>Nhấn Space khi bóng thật khớp bóng ảo (khớp tâm đỏ = HR).";
+            if (batterOuts >= MAX_BATTER_OUTS) { if(gameRunning) showMessageBox(`Game Over! Điểm cuối cùng: ${score}`); } // Chỉ hiện game over nếu game đang chạy
+            else { const delay = 1500 + Math.random() * 800; autoPitchTimeout = setTimeout(autoPitch, delay); }
+            // Không cần khởi động lại interval khán giả
+        }
+        function autoPitch() { /* ... */
+             if (!gameRunning || batterOuts >= MAX_BATTER_OUTS || ballInPlay) return;
+             const randomIndex = Math.floor(Math.random() * ZONES.length); const targetZone = ZONES[randomIndex]; pitch(targetZone);
+        }
+        function pitch(targetZone) { /* ... */
+            if (!gameRunning || ballInPlay || batterOuts >= MAX_BATTER_OUTS) return;
+            pitchTargetZone = targetZone; ballInPlay = true; canSwing = true; hasSwung = false;
+            instructionsDiv.innerHTML = "Dùng Mũi Tên để nhắm vào vùng bóng tới.<br>Nhấn Space khi bóng thật khớp bóng ảo (khớp tâm đỏ = HR).";
+            ball.style.transition = 'none'; ball.style.opacity = '1';
+            ball.style.transform = 'translateX(-50%) translateY(0) translateZ(-250px) scale(0.1)';
+            ball.style.left = '50%'; ball.style.top = '61%';
+            let targetXPercent = 50; let targetYPercent = 65;
+            switch (targetZone) { case 'up-left': targetXPercent -= 5; targetYPercent -= 8; break; case 'up-right': targetXPercent += 5; targetYPercent -= 8; break; case 'down-left': targetXPercent -= 5; targetYPercent += 8; break; case 'down-right': targetXPercent += 5; targetYPercent += 8; break; }
+            void ball.offsetWidth;
+            ball.style.transition = `transform ${PITCH_SPEED}s linear, left ${PITCH_SPEED}s linear, top ${PITCH_SPEED}s linear`;
+            ball.style.transform = `translateX(-50%) translateY(0) translateZ(40px) scale(1.6)`;
+            ball.style.left = `${targetXPercent}%`; ball.style.top = `${targetYPercent}%`;
+            clearTimeout(ghostBallTimeout);
+            ghostBallTimeout = setTimeout(() => { if (ballInPlay) { ghostBall.style.opacity = '1'; } }, GHOST_BALL_APPEAR_TIME * 1000);
+            clearTimeout(pitchEndTimeout);
+            pitchEndTimeout = setTimeout(() => { if (ballInPlay && !hasSwung) { handleOutcome(batterAimZone, true); } }, PITCH_SPEED * 1000 + 100);
+        }
+        function swing() { /* ... */
+             if (!gameRunning || !ballInPlay || !canSwing || hasSwung || batterOuts >= MAX_BATTER_OUTS) { return; }
+            hasSwung = true; canSwing = false; clearTimeout(pitchEndTimeout);
+            bat.style.transform = 'translateX(-60%) rotate(-80deg)'; bat.style.zIndex = 30;
+            handleOutcome(batterAimZone, false);
+        }
+        function handleOutcome(aimZone, noSwing = false) { /* ... (logic giống v9, strike không reset) ... */
+             if ((!ballInPlay && !hasSwung) && !noSwing) return;
+            ballInPlay = false; canSwing = false; clearTimeout(ghostBallTimeout); ghostBall.style.opacity = '0'; clearTimeout(pitchEndTimeout);
+            let outcome = "Strike!"; let hitQuality = 0;
+            let overlapResult = { overlapOuter: false, overlapInner: false, distanceOuter: Infinity, distanceInner: Infinity };
+            let scoreChange = SCORE_STRIKE;
+            if (noSwing) { strikes++; }
+            else if (hasSwung) {
+                 overlapResult = checkOverlap(ball, ghostBall, innerGhostBall); const correctDirection = aimZone === pitchTargetZone;
+                 const perfectDistanceInner = 8; const goodDistanceOuter = 28;
+                 if (overlapResult.overlapInner && overlapResult.distanceInner <= perfectDistanceInner) {
+                     if (correctDirection) { outcome = "Home Run!"; hitQuality = 3; scoreChange = SCORE_HOME_RUN; }
+                     else { outcome = "Foul Ball!"; hitQuality = 1; if (strikes < 2) strikes++; scoreChange = 0; }
+                 } else if (overlapResult.overlapOuter && overlapResult.distanceOuter <= goodDistanceOuter) {
+                      if (correctDirection) { outcome = "Hit!"; hitQuality = 2; scoreChange = SCORE_HIT; }
+                      else { outcome = "Foul Ball!"; hitQuality = 1; if (strikes < 2) strikes++; scoreChange = 0; }
+                 } else if (overlapResult.overlapOuter) { outcome = "Foul Ball!"; hitQuality = 1; if (strikes < 2) strikes++; scoreChange = 0; }
+                 else { outcome = "Miss! Strike!"; hitQuality = 0; strikes++; }
+            } else { strikes++; }
+            if (hitQuality !== 1) { score += scoreChange; } else { scoreChange = 0; }
+            showOutcomeMessage(outcome); console.log("Outcome:", outcome, "Score change:", scoreChange, "Strikes:", strikes);
+            if (hitQuality >= 1) {
+                 const computedStyle = window.getComputedStyle(ball); const currentTransform = computedStyle.transform; const currentLeft = computedStyle.left; const currentTop = computedStyle.top;
+                 ball.style.transition = 'none'; ball.style.transform = currentTransform; ball.style.left = currentLeft; ball.style.top = currentTop; void ball.offsetWidth;
+                 let flyX = 0, flyY = -800, flyZ = -500, flyScale = 0.1; let flyDuration = 0.8;
+                 if (hitQuality === 1) { flyX = (pitchTargetZone === 'down-left' || pitchTargetZone === 'up-left') ? -400 : 400; flyY = -300; flyScale = 0.2; flyDuration = 0.5; }
+                 else if (hitQuality === 3) { flyY = -1200; flyZ = -800; flyDuration = 1.2; }
+                 ball.style.transition = `transform ${flyDuration}s ease-out, opacity ${flyDuration}s ease-out`;
+                 ball.style.transform = `translateX(${flyX}px) translateY(${flyY}px) translateZ(${flyZ}px) scale(${flyScale})`; ball.style.opacity = '0';
+            } else {
+                 const computedStyle = window.getComputedStyle(ball); const currentTransform = computedStyle.transform; const currentLeft = computedStyle.left; const currentTop = computedStyle.top;
+                 ball.style.transition = 'none'; ball.style.transform = currentTransform; ball.style.left = currentLeft; ball.style.top = currentTop; void ball.offsetWidth;
+                 ball.style.transition = 'opacity 0.3s ease-out'; ball.style.opacity = '0';
+            }
+            if (strikes >= 3) { batterOuts++; showOutcomeMessage(`Batter Out! (${batterOuts}/${MAX_BATTER_OUTS})`); console.log("Batter out!"); strikes = 0; }
+            updateScoreboard();
+            clearTimeout(outcomeTimeout);
+            outcomeTimeout = setTimeout(() => { messageDiv.style.display = 'none'; resetBatterState(); }, hitQuality === 0 ? 500 : 1800);
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('keydown', (event) => {
+             if (!gameRunning || messageBox.style.display === 'block') return;
+            if (batterOuts >= MAX_BATTER_OUTS) return;
+            const targetZone = KEY_TO_ZONE_MAP[event.key];
+            if (targetZone) { event.preventDefault(); moveGhostBall(targetZone); }
+            if ((event.key === ' ' || event.code === 'Space')) { event.preventDefault(); swing(); }
+        });
+
+        startGameButton.addEventListener('click', () => {
+            const enteredName = teamNameInput.value.trim();
+            teamName = enteredName || "ĐỘI NHÀ";
+            banner.textContent = `Let Go ${teamName.toUpperCase()}!`;
+            startScreen.style.display = 'none';
+            gameContainerMain.style.display = 'flex';
+            gameContainerMain.style.flexDirection = 'column';
+            gameContainerMain.style.alignItems = 'center';
+            gameRunning = true;
+            score = 0; strikes = 0; batterOuts = 0; updateScoreboard();
+            // Không cần setup canvas khán giả nữa
+            resetBatterState(); // Bắt đầu game
+            console.log(`Game started for team: ${teamName}`);
+        });
+
+        // --- Bỏ Khán giả Canvas ---
+        // Bỏ hàm drawSpectators, setupSpectatorCanvas, listener resize
+
+        // --- Initialization ---
+        window.onload = () => {
+             console.log("Window loaded. Ready for team name input.");
+             // Không cần làm gì thêm ở đây
+        };
+
+    </script>
+
+</body>
+</html>
